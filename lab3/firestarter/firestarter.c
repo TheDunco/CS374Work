@@ -104,7 +104,6 @@ int main(int argc, char ** argv) {
             // keep sum of probabilities
             percent_burned[i_prob] += get_percent_burned(forest_size,forest);
         }
-        foo
     }
 
     for (i_prob = 0; i < n_trials; i_prob++) {
