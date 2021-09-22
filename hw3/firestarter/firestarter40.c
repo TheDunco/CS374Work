@@ -1,10 +1,7 @@
 /* firestarter.c 
  * David Joiner
  * Usage: Fire [forestSize(20)] [numTrials(5000)] * [numProbabilities(101)] [showGraph(1)]
- * Monte Carlo Simulaiton of a forest fire.
- * Modified (paralellized) by Duncan Van Keulen for 
- * CS 374 High Performance Computing Project 3
- * Calvin University
+ * Modified by Duncan Van Keulen for HPC homework 3
  * 17 September 2021
  */
 #include <stdio.h>
@@ -36,7 +33,7 @@ extern void print_forest(int, int **);
 
 int main(int argc, char ** argv) {
     // initial conditions and variable definitions
-    int forest_size=20;
+    int forest_size=40;
     double * prob_spread;
     double prob_min=0.0;
     double prob_max=1.0;
