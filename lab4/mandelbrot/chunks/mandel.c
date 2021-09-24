@@ -3,15 +3,19 @@
  * Written Winter, 1998, W. David Laverell.
  *
  * Refactored Winter 2002, Joel Adams. 
+ * 
+ * Modified Fall 2021, Duncan Van Keulen for HPC homework 4
  */
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <math.h>
 #include <sys/time.h>
 #include <mpi.h>
 #include <mpe.h>
 #include "display.h"
 
+#define MASTER 0
 
 /* compute the Mandelbrot-set function for a given
  *  point in the complex plane.
@@ -39,6 +43,12 @@ double distance(double x, double y)
         return x*x + y*y;
 }
 
+typedef struct {
+   int ix;
+   int iy;
+   bool in;
+} fractalPixel;
+
 
 int main(int argc, char* argv[])
 {
@@ -46,21 +56,38 @@ int main(int argc, char* argv[])
     const int  WINDOW_WIDTH  = 1200;
     const double SPACING     = 0.003; // 0.0025
 
-    int        n        = 0,
-               ix       = 0,
-               iy       = 0,
-               button   = 0,
-               id       = 0;
-    double     x        = 0.0,
-               y        = 0.0,
-               c_real   = 0.0,
-               c_imag   = 0.0,
-               x_center = 1.16, // 1.16
-               y_center = -0.1; // 0.16
+   // instead of struct make matrix of bools
+    fractalPixel pixelArray[WINDOW_WIDTH][WINDOW_HEIGHT] = {0};
+
+    int        n            = 0,
+               ix           = 0,
+               iy           = 0,
+               button       = 0,
+               id           = 0,
+               numProcesses = 0,
+               chunkSize    = 0,
+               startPos     = 0,
+               endPos       = 0;
+    double     x            = 0.0,
+               y            = 0.0,
+               c_real       = 0.0,
+               c_imag       = 0.0,
+               x_center     = 1.16, // 1.16
+               y_center     = -0.1; // 0.16
 
     MPE_XGraph graph;
 
     MPI_Init(&argc,&argv);
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &id);
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+
+   // calculate the size of the chunks we are using
+   chunkSize = WINDOW_WIDTH / numProcesses;
+   
+   // calculate where we will start and where we wil lend
+   startPos = id * chunkSize;
+   endPos = (1 + id) * chunkSize;
 /*
     // Uncomment this block for interactive use
     printf("\nEnter spacing (.005): "); fflush(stdout);
@@ -75,7 +102,7 @@ int main(int argc, char* argv[])
                          -1, -1,
                          WINDOW_WIDTH, WINDOW_HEIGHT, 0 );
 
-    for (ix = 0; ix < WINDOW_WIDTH; ix++)
+    for (ix = startPos; ix < endPos; ix++)
     {
        for (iy = 0; iy < WINDOW_HEIGHT; iy++)
        {
@@ -90,11 +117,23 @@ int main(int argc, char* argv[])
              n++;
           }
 
-          if (n < 50) {
-             MPE_Draw_point(graph, ix, iy, MPE_PINK);
-          } else {
-             MPE_Draw_point(graph, ix, iy, MPE_BLACK);
-          }
+         // not in fractal
+         if (n < 50) {
+            pixelArray[ix][iy] = new fractalPixel {
+               ix = ix;
+               iy = iy;
+               in = false;
+            }
+            // MPE_Draw_point(graph, ix, iy, MPE_PINK);
+         // point lies within the fractal
+         } else {
+            pixelArray[ix][iy] = new fractalPixel {
+               ix = ix;
+               iy = iy;
+               in = true;
+            }
+            // MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+         }
        }
     }
 
