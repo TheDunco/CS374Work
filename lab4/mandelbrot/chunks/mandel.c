@@ -8,6 +8,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
 #include <sys/time.h>
@@ -40,47 +41,45 @@ void compute(double x, double y, double c_real, double c_imag,
  */
 double distance(double x, double y)
 {
-        return x*x + y*y;
+   return x*x + y*y;
 }
-
-typedef struct {
-   int ix;
-   int iy;
-   bool in;
-} fractalPixel;
-
 
 int main(int argc, char* argv[])
 {
-    const int  WINDOW_HEIGHT = 900; // 900
-    const int  WINDOW_WIDTH  = 1200;
-    const double SPACING     = 0.003; // 0.0025
+   const int  WINDOW_HEIGHT = 900; // 900
+   const int  WINDOW_WIDTH  = 1200;
+   const int WINDOW_SIZE = WINDOW_HEIGHT * WINDOW_WIDTH;
+   const double SPACING     = 0.003; // 0.0025
 
    // instead of struct make matrix of bools
-    fractalPixel pixelArray[WINDOW_WIDTH][WINDOW_HEIGHT] = {0};
+   bool * myWindow;
+   bool * finalWindow;
 
-    int        n            = 0,
-               ix           = 0,
-               iy           = 0,
-               button       = 0,
-               id           = 0,
-               numProcesses = 0,
-               chunkSize    = 0,
-               startPos     = 0,
-               endPos       = 0;
-    double     x            = 0.0,
-               y            = 0.0,
-               c_real       = 0.0,
-               c_imag       = 0.0,
-               x_center     = 1.16, // 1.16
-               y_center     = -0.1; // 0.16
+   // bool **myWindowMatrix;
+   // bool **finalWindowMatrix;
 
-    MPE_XGraph graph;
+   int      n            = 0,
+            ix           = 0,
+            iy           = 0,
+            button       = 0,
+            id           = 0,
+            numProcesses = 0,
+            chunkSize    = 0,
+            startPos     = 0,
+            endPos       = 0;
+   double     x            = 0.0,
+            y            = 0.0,
+            c_real       = 0.0,
+            c_imag       = 0.0,
+            x_center     = 1.16, // 1.16
+            y_center     = -0.1; // 0.16
 
-    MPI_Init(&argc,&argv);
+   MPE_XGraph graph;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &id);
-    MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+   MPI_Init(&argc,&argv);
+
+   MPI_Comm_rank(MPI_COMM_WORLD, &id);
+   MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
 
    // calculate the size of the chunks we are using
    chunkSize = WINDOW_WIDTH / numProcesses;
@@ -97,15 +96,19 @@ int main(int argc, char* argv[])
     printf("\nSpacing=%lf, center=(%lf,%lf)\n",
             spacing, x_center, y_center);
 */
-    MPE_Open_graphics( &graph, MPI_COMM_WORLD, 
-                         getDisplay(),
-                         -1, -1,
-                         WINDOW_WIDTH, WINDOW_HEIGHT, 0 );
+   MPE_Open_graphics( &graph, MPI_COMM_WORLD, 
+                     getDisplay(),
+                     -1, -1,
+                     WINDOW_WIDTH, WINDOW_HEIGHT, 0 );
 
-    for (ix = startPos; ix < endPos; ix++)
-    {
-       for (iy = 0; iy < WINDOW_HEIGHT; iy++)
-       {
+   myWindow = (bool *) malloc (sizeof(bool*) * chunkSize * WINDOW_HEIGHT);
+   finalWindow = (bool *) malloc (sizeof(bool*) * WINDOW_SIZE);
+
+   int xCount = 0;
+   for (ix = startPos; ix < endPos; ix++)
+   {
+      for (iy = 0; iy < WINDOW_HEIGHT; iy++)
+      {
           c_real = (ix - 400) * SPACING - x_center;
           c_imag = (iy - 400) * SPACING - y_center;
           x = y = 0.0;
@@ -119,32 +122,40 @@ int main(int argc, char* argv[])
 
          // not in fractal
          if (n < 50) {
-            pixelArray[ix][iy] = new fractalPixel {
-               ix = ix;
-               iy = iy;
-               in = false;
-            }
-            // MPE_Draw_point(graph, ix, iy, MPE_PINK);
-         // point lies within the fractal
+            myWindow[xCount * WINDOW_HEIGHT + iy ] = false;
+         // point lies within the WINDOW_HEIGHTal
          } else {
-            pixelArray[ix][iy] = new fractalPixel {
-               ix = ix;
-               iy = iy;
-               in = true;
-            }
-            // MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+            myWindow[xCount * WINDOW_HEIGHT + iy ] = true;
          }
-       }
-    }
+      }
+      xCount++;
+   }
 
-    // pause until mouse-click so the program doesn't terminate
-    if (id == 0) {
-        printf("\nClick in the window to continue...\n");
-        MPE_Get_mouse_press( graph, &ix, &iy, &button );
-    }
+   MPI_Gather(myWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, finalWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, 0, MPI_COMM_WORLD);
 
-    MPE_Close_graphics( &graph );
-    MPI_Finalize();
-    return 0;
+   if (id == MASTER) {
+      for (ix = 0; ix < WINDOW_WIDTH; ix++)
+      {
+         for (iy = 0; iy < WINDOW_HEIGHT; iy++) {
+            if(finalWindow[ix * WINDOW_HEIGHT + iy]) {
+               MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+            } else {
+               MPE_Draw_point(graph, ix, iy, MPE_PINK);
+            }
+         }
+      }
+   }
+
+   // pause until mouse-click so the program doesn't terminate
+   if (id == 0) {
+      printf("\nClick in the window to continue...\n");
+      MPE_Get_mouse_press( graph, &ix, &iy, &button );
+   }
+
+   free(myWindow);
+   free(finalWindow);
+   MPE_Close_graphics( &graph );
+   MPI_Finalize();
+   return 0;
 }
 
