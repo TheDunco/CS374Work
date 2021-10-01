@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
    double startTime = 0.0, totalTime = 0.0;
 
    // instead of struct make matrix of bools
-   bool * myWindow;
+   bool * myRow;
    bool * finalWindow;
 
    // bool **myWindowMatrix;
@@ -90,75 +90,110 @@ int main(int argc, char* argv[])
             spacing, x_center, y_center);
 */
 
-   // allocate memory for the myWindow (size chunkSize * WINDOW_HEIGHT) and finalWindow
-   myWindow = (bool *) malloc (sizeof(bool*) * WINDOW_SIZE);
-   finalWindow = (bool *) malloc (sizeof(bool*) * WINDOW_SIZE);
+   if (numProcesses == 1) {
+      // TODO: Perform the entire computation myself using the default sequential approach
 
-   if (id == MASTER) {
-      startTime = MPI_Wtime();
-   }
-
-   for (iy = id; iy < WINDOW_HEIGHT; iy += numProcesses)
-   {
       for (ix = 0; ix < WINDOW_WIDTH; ix++)
-      {
-         c_real = (ix - 400) * SPACING - x_center;
-         c_imag = (iy - 400) * SPACING - y_center;
-         x = y = 0.0;
-         n = 0;
+       {
+       for (iy = 0; iy < WINDOW_HEIGHT; iy++)
+       {
+          c_real = (ix - 400) * SPACING - x_center;
+          c_imag = (iy - 400) * SPACING - y_center;
+          x = y = 0.0;
+          n = 0;
 
-         while (n < 50 && distance(x, y) < 4.0)
-         {
-            compute(x, y, c_real, c_imag, &x, &y);
-            n++;
-         }
+          while (n < 50 && distance(x, y) < 4.0)
+          {
+             compute(x, y, c_real, c_imag, &x, &y);
+             n++;
+          }
 
-         // not in fractal
-         if (n < 50) {
-            myWindow[ix * WINDOW_HEIGHT + iy ] = false;
-         // point lies within the WINDOW_HEIGHTal
-         } else {
-            myWindow[ix * WINDOW_HEIGHT + iy ] = true;
-         }
-      }
+          if (n < 50) {
+             MPE_Draw_point(graph, ix, iy, MPE_PINK);
+          } else {
+             MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+          }
+       }
+    }
    }
+   else {
+      // do master-worker
+      if (id == MASTER) {
+         finalWindow = (bool *) malloc (sizeof(bool*) * WINDOW_SIZE);
+         startTime = MPI_Wtime();
+      }
 
-   // if(id == MASTER) {
-   //    totalTime = MPI_Wtime() - startTime;
-   //    printf("%f", totalTime);
-   // }
+      // if we are a worker, calculate using the chunks approach
+      if (id != MASTER) {
 
-   // MPI_Gather(myWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, finalWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, 0, MPI_COMM_WORLD);
-   MPI_Reduce(myWindow, finalWindow, WINDOW_SIZE, MPI_C_BOOL, MPI_LOR, 0, MPI_COMM_WORLD);
+         // allocate memory for the row I will be computing
+         myRow = (bool *) malloc (sizeof(bool*) * WINDOW_WIDTH);
 
-   if (id == MASTER) {
-   // only deal with grpahics if we are id 0
-      MPE_Open_graphics( &graph, MPI_COMM_WORLD, 
-                  getDisplay(),
-                  -1, -1,
-                  WINDOW_WIDTH, WINDOW_HEIGHT, 0 );
+         for (iy = id; iy < WINDOW_HEIGHT; iy += numProcesses)
+         {
+            for (ix = 0; ix < WINDOW_WIDTH; ix++)
+            {
+               c_real = (ix - 400) * SPACING - x_center;
+               c_imag = (iy - 400) * SPACING - y_center;
+               x = y = 0.0;
+               n = 0;
 
-      for (ix = 0; ix < WINDOW_WIDTH; ix++) {
-         for (iy = 0; iy < WINDOW_HEIGHT; iy++) {
-            if(finalWindow[ix * WINDOW_HEIGHT + iy]) {
-               MPE_Draw_point(graph, ix, iy, MPE_BLACK);
-            } else {
-               MPE_Draw_point(graph, ix, iy, MPE_PINK);
+               while (n < 50 && distance(x, y) < 4.0)
+               {
+                  compute(x, y, c_real, c_imag, &x, &y);
+                  n++;
+               }
+
+               // not in fractal
+               if (n < 50) {
+                  myWindow[ix * WINDOW_HEIGHT + iy ] = false;
+               // point lies within the WINDOW_HEIGHTal
+               } else {
+                  myWindow[ix * WINDOW_HEIGHT + iy ] = true;
+               }
             }
          }
       }
 
-      totalTime = MPI_Wtime() - startTime;
+      // if(id == MASTER) {
+      //    totalTime = MPI_Wtime() - startTime;
+      //    printf("%f", totalTime);
+      // }
 
-      printf("%f", totalTime);
+      // MPI_Gather(myWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, finalWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+      MPI_Reduce(myWindow, finalWindow, WINDOW_SIZE, MPI_C_BOOL, MPI_LOR, 0, MPI_COMM_WORLD);
 
-      printf("\nClick in the window to continue...\n");
-      MPE_Get_mouse_press( graph, &ix, &iy, &button );
-      MPE_Close_graphics( &graph );
+      // draw the set to the screen
+      if (id == MASTER) {
+      // only deal with grpahics if we are id 0
+         MPE_Open_graphics( &graph, MPI_COMM_WORLD, 
+                     getDisplay(),
+                     -1, -1,
+                     WINDOW_WIDTH, WINDOW_HEIGHT, 0 );
+
+         for (ix = 0; ix < WINDOW_WIDTH; ix++) {
+            for (iy = 0; iy < WINDOW_HEIGHT; iy++) {
+               if(finalWindow[ix * WINDOW_HEIGHT + iy]) {
+                  MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+               } else {
+                  MPE_Draw_point(graph, ix, iy, MPE_PINK);
+               }
+            }
+         }
+
+         totalTime = MPI_Wtime() - startTime;
+
+         printf("%f", totalTime);
+
+         printf("\nClick in the window to continue...\n");
+         MPE_Get_mouse_press( graph, &ix, &iy, &button );
+         MPE_Close_graphics( &graph );
+      }
+
+      free(myRow);
+      free(finalWindow);
    }
 
-   free(myWindow);
-   free(finalWindow);
 
    MPI_Finalize();
    return 0;

@@ -85,6 +85,7 @@ int main(int argc, char* argv[])
 
    // calculate the size of the chunks we are using
    chunkSize = WINDOW_WIDTH / numProcesses;
+   remainder = WINDOW_WIDTH % numProcesses;
    
    // calculate where we will start and where we wil lend
    startPos = id * chunkSize;
