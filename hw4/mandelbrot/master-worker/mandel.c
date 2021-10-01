@@ -91,36 +91,41 @@ int main(int argc, char* argv[])
 */
 
    if (numProcesses == 1) {
-      // TODO: Perform the entire computation myself using the default sequential approach
+      // Perform the entire computation myself using the default sequential approach
+      for (ix = 0; ix < WINDOW_WIDTH; ix++) {
+         for (iy = 0; iy < WINDOW_HEIGHT; iy++)
+         {
+            c_real = (ix - 400) * SPACING - x_center;
+            c_imag = (iy - 400) * SPACING - y_center;
+            x = y = 0.0;
+            n = 0;
 
-      for (ix = 0; ix < WINDOW_WIDTH; ix++)
-       {
-       for (iy = 0; iy < WINDOW_HEIGHT; iy++)
-       {
-          c_real = (ix - 400) * SPACING - x_center;
-          c_imag = (iy - 400) * SPACING - y_center;
-          x = y = 0.0;
-          n = 0;
+            while (n < 50 && distance(x, y) < 4.0)
+            {
+               compute(x, y, c_real, c_imag, &x, &y);
+               n++;
+            }
 
-          while (n < 50 && distance(x, y) < 4.0)
-          {
-             compute(x, y, c_real, c_imag, &x, &y);
-             n++;
-          }
-
-          if (n < 50) {
-             MPE_Draw_point(graph, ix, iy, MPE_PINK);
-          } else {
-             MPE_Draw_point(graph, ix, iy, MPE_BLACK);
-          }
-       }
-    }
+            if (n < 50) {
+               MPE_Draw_point(graph, ix, iy, MPE_PINK);
+            } else {
+               MPE_Draw_point(graph, ix, iy, MPE_BLACK);
+            }
+         }
+      }
    }
    else {
-      // do master-worker
+      // Perform the calculation using the master-worker approach
       if (id == MASTER) {
          finalWindow = (bool *) malloc (sizeof(bool*) * WINDOW_SIZE);
          startTime = MPI_Wtime();
+
+         // TODO: compute and display Mandelbrot values for row 0
+         // TODO: wait to recieve a row from any worker
+            // TODO: once recieved, Send worker the number of the next row to be computed
+            // TODO: display the row we just recieved from the worker
+         // TODO: continue to wait on other workers and loop
+         // TODO: once all rows are computed, send "termination" message to each worker and terminate (break)
       }
 
       // if we are a worker, calculate using the chunks approach
@@ -129,9 +134,10 @@ int main(int argc, char* argv[])
          // allocate memory for the row I will be computing
          myRow = (bool *) malloc (sizeof(bool*) * WINDOW_WIDTH);
 
-         for (iy = id; iy < WINDOW_HEIGHT; iy += numProcesses)
+         int xCount = 0;
+         for (ix = startPos; ix < endPos; ix++)
          {
-            for (ix = 0; ix < WINDOW_WIDTH; ix++)
+            for (iy = 0; iy < WINDOW_HEIGHT; iy++)
             {
                c_real = (ix - 400) * SPACING - x_center;
                c_imag = (iy - 400) * SPACING - y_center;
@@ -146,12 +152,13 @@ int main(int argc, char* argv[])
 
                // not in fractal
                if (n < 50) {
-                  myWindow[ix * WINDOW_HEIGHT + iy ] = false;
+                  myWindow[xCount * WINDOW_HEIGHT + iy ] = false;
                // point lies within the WINDOW_HEIGHTal
                } else {
-                  myWindow[ix * WINDOW_HEIGHT + iy ] = true;
+                  myWindow[xCount * WINDOW_HEIGHT + iy ] = true;
                }
             }
+            xCount++;
          }
       }
 
