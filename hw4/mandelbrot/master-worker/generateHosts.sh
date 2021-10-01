@@ -1,0 +1,1 @@
+./genHosts.pl > hosts && code hosts

@@ -5,6 +5,7 @@
  * Refactored Winter 2002, Joel Adams. 
  * 
  * Modified Fall 2021, Duncan Van Keulen for HPC homework 4
+ * Paralellized using the parallel chunks approach
  */
 
 #include <stdio.h>
