@@ -97,9 +97,9 @@ int main(int argc, char* argv[])
       startTime = MPI_Wtime();
    }
 
-   for (ix = id; ix < WINDOW_WIDTH; ix += numProcesses)
+   for (iy = id; iy < WINDOW_HEIGHT; iy += numProcesses)
    {
-      for (iy = 0; iy < WINDOW_HEIGHT; iy++)
+      for (ix = 0; ix < WINDOW_WIDTH; ix++)
       {
          c_real = (ix - 400) * SPACING - x_center;
          c_imag = (iy - 400) * SPACING - y_center;
@@ -162,4 +162,5 @@ int main(int argc, char* argv[])
    MPI_Finalize();
    return 0;
 }
+
 
