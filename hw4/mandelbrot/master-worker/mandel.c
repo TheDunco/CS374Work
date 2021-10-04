@@ -29,10 +29,10 @@
  *        function for x, y, and c.
  */
 void compute(double x, double y, double c_real, double c_imag,
-              double *ans_x, double *ans_y)
+             double *ans_x, double *ans_y)
 {
-        *ans_x = x*x - y*y + c_real;
-        *ans_y = 2*x*y + c_imag;
+   *ans_x = x * x - y * y + c_real;
+   *ans_y = 2 * x * y + c_imag;
 }
 
 /* compute the 'distance' between x and y.
@@ -42,45 +42,46 @@ void compute(double x, double y, double c_real, double c_imag,
  */
 double distance(double x, double y)
 {
-   return x*x + y*y;
+   return x * x + y * y;
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-   const int  WINDOW_HEIGHT = 900; // 900
-   const int  WINDOW_WIDTH  = 1200;
+   const int WINDOW_HEIGHT = 900; // 900
+   const int WINDOW_WIDTH = 1200;
    const int WINDOW_SIZE = WINDOW_HEIGHT * WINDOW_WIDTH;
-   const double SPACING     = 0.003; // 0.0025
+   const double SPACING = 0.003; // 0.0025
    double startTime = 0.0, totalTime = 0.0;
 
    // instead of struct make matrix of bools
-   bool * myRow;
-   bool * finalWindow;
+   bool *myRow;
 
    // bool **myWindowMatrix;
    // bool **finalWindowMatrix;
 
-   int      n            = 0,
-            ix           = 0,
-            iy           = 0,
-            button       = 0,
-            id           = 0,
-            numProcesses = 0;
-   double   x            = 0.0,
-            y            = 0.0,
-            c_real       = 0.0,
-            c_imag       = 0.0,
-            x_center     = 1.16, // 1.16
-            y_center     = -0.1; // 0.16
+   int n = 0,
+       ix = 0,
+       iy = 0,
+       button = 0,
+       id = 0,
+       numProcesses = 0;
+   double x = 0.0,
+          y = 0.0,
+          c_real = 0.0,
+          c_imag = 0.0,
+          x_center = 1.16, // 1.16
+       y_center = -0.1;    // 0.16
 
    MPE_XGraph graph;
 
-   MPI_Init(&argc,&argv);
+   MPI_Init(&argc, &argv);
 
    MPI_Comm_rank(MPI_COMM_WORLD, &id);
    MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
 
-/*
+   MPI_Status status;
+
+   /*
     // Uncomment this block for interactive use
     printf("\nEnter spacing (.005): "); fflush(stdout);
     scanf("%lf",&spacing);
@@ -90,9 +91,18 @@ int main(int argc, char* argv[])
             spacing, x_center, y_center);
 */
 
-   if (numProcesses == 1) {
+   if (numProcesses == 1)
+   {
+      MPE_Open_graphics(&graph, MPI_COMM_WORLD,
+                        getDisplay(),
+                        -1, -1,
+                        WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+
+      startTime = MPI_Wtime();
+
       // Perform the entire computation myself using the default sequential approach
-      for (ix = 0; ix < WINDOW_WIDTH; ix++) {
+      for (ix = 0; ix < WINDOW_WIDTH; ix++)
+      {
          for (iy = 0; iy < WINDOW_HEIGHT; iy++)
          {
             c_real = (ix - 400) * SPACING - x_center;
@@ -106,38 +116,119 @@ int main(int argc, char* argv[])
                n++;
             }
 
-            if (n < 50) {
+            if (n < 50)
+            {
                MPE_Draw_point(graph, ix, iy, MPE_PINK);
-            } else {
+            }
+            else
+            {
                MPE_Draw_point(graph, ix, iy, MPE_BLACK);
             }
          }
       }
+
+      totalTime = MPI_Wtime() - startTime;
+
+      printf("%f", totalTime);
+
+      printf("\nClick in the window to continue...\n");
+      MPE_Get_mouse_press(graph, &ix, &iy, &button);
+      MPE_Close_graphics(&graph);
    }
-   else {
+   else
+   {
+      myRow = (bool *)malloc(sizeof(bool *) * WINDOW_WIDTH);
+
       // Perform the calculation using the master-worker approach
-      if (id == MASTER) {
-         finalWindow = (bool *) malloc (sizeof(bool*) * WINDOW_SIZE);
+      if (id == MASTER)
+      {
+         MPE_Open_graphics(&graph, MPI_COMM_WORLD,
+                           getDisplay(),
+                           -1, -1,
+                           WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+
+         // start timing
          startTime = MPI_Wtime();
 
-         // TODO: compute and display Mandelbrot values for row 0
-         // TODO: wait to recieve a row from any worker
-            // TODO: once recieved, Send worker the number of the next row to be computed
-            // TODO: display the row we just recieved from the worker
-         // TODO: continue to wait on other workers and loop
-         // TODO: once all rows are computed, send "termination" message to each worker and terminate (break)
-      }
-
-      // if we are a worker, calculate using the chunks approach
-      if (id != MASTER) {
-
-         // allocate memory for the row I will be computing
-         myRow = (bool *) malloc (sizeof(bool*) * WINDOW_WIDTH);
-
-         int xCount = 0;
-         for (ix = startPos; ix < endPos; ix++)
+         // compute and display row 0
+         for (ix = 0; ix < WINDOW_WIDTH; ix++)
          {
-            for (iy = 0; iy < WINDOW_HEIGHT; iy++)
+            c_real = (ix - 400) * SPACING - x_center;
+            c_imag = (MASTER - 400) * SPACING - y_center;
+            x = y = 0.0;
+            n = 0;
+
+            while (n < 50 && distance(x, y) < 4.0)
+            {
+               compute(x, y, c_real, c_imag, &x, &y);
+               n++;
+            }
+
+            if (n < 50)
+            {
+               MPE_Draw_point(graph, ix, MASTER, MPE_PINK);
+            }
+            else
+            {
+               MPE_Draw_point(graph, ix, MASTER, MPE_BLACK);
+            }
+         }
+
+         // variable to keep track of the next row that has to be computed
+         int nextRow = numProcesses;
+         int numDrawn = 1;
+
+         while (numDrawn < WINDOW_HEIGHT)
+         {
+            // wait to receive a row from a worker
+            MPI_Recv(myRow, WINDOW_WIDTH, MPI_C_BOOL, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+            // the next row to compute will be the tag of the message received
+            iy = status.MPI_TAG;
+
+            // send that worker the next row to compute
+            MPI_Send(&nextRow, 1, MPI_INT, status.MPI_SOURCE, 1, MPI_COMM_WORLD);
+
+            if (nextRow < WINDOW_HEIGHT) { nextRow++; }
+
+            // draw the row we recieved from the worker
+            for (int i = 0; i < WINDOW_WIDTH; i++)
+            {
+               if (myRow[i])
+               {
+                  MPE_Draw_point(graph, i, iy, MPE_BLACK);
+               }
+               else
+               {
+                  MPE_Draw_point(graph, i, iy, MPE_PINK);
+               }
+            }
+
+            numDrawn++;
+         }
+
+         // send termination message to all procs EXCEPT the master
+         for (int i = 1; i < numProcesses; i++)
+         {
+            MPI_Send(&nextRow, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+         }
+
+         totalTime = MPI_Wtime() - startTime;
+
+         printf("%f", totalTime);
+
+         printf("\nClick in the window to continue...\n");
+         MPE_Get_mouse_press(graph, &ix, &iy, &button);
+         MPE_Close_graphics(&graph);
+      }
+      // if we are a worker, calculate using the chunks of 1 (slices) approach
+      else if (id != MASTER)
+      {
+         // until we get what row we need
+         iy = id;
+
+         while (true)
+         {
+            for (ix = 0; ix < WINDOW_WIDTH; ix++)
             {
                c_real = (ix - 400) * SPACING - x_center;
                c_imag = (iy - 400) * SPACING - y_center;
@@ -151,59 +242,31 @@ int main(int argc, char* argv[])
                }
 
                // not in fractal
-               if (n < 50) {
-                  myWindow[xCount * WINDOW_HEIGHT + iy ] = false;
-               // point lies within the WINDOW_HEIGHTal
-               } else {
-                  myWindow[xCount * WINDOW_HEIGHT + iy ] = true;
+               if (n < 50)
+               {
+                  myRow[ix] = false;
+                  // point lies within the WINDOW_HEIGHTal
+               }
+               else
+               {
+                  myRow[ix] = true;
                }
             }
-            xCount++;
-         }
-      }
+            // send the row to the master
+            MPI_Send(myRow, WINDOW_WIDTH, MPI_C_BOOL, 0, iy, MPI_COMM_WORLD);
+            // recieve the next iy from the master
+            MPI_Recv(&iy, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-      // if(id == MASTER) {
-      //    totalTime = MPI_Wtime() - startTime;
-      //    printf("%f", totalTime);
-      // }
-
-      // MPI_Gather(myWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, finalWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, 0, MPI_COMM_WORLD);
-      MPI_Reduce(myWindow, finalWindow, WINDOW_SIZE, MPI_C_BOOL, MPI_LOR, 0, MPI_COMM_WORLD);
-
-      // draw the set to the screen
-      if (id == MASTER) {
-      // only deal with grpahics if we are id 0
-         MPE_Open_graphics( &graph, MPI_COMM_WORLD, 
-                     getDisplay(),
-                     -1, -1,
-                     WINDOW_WIDTH, WINDOW_HEIGHT, 0 );
-
-         for (ix = 0; ix < WINDOW_WIDTH; ix++) {
-            for (iy = 0; iy < WINDOW_HEIGHT; iy++) {
-               if(finalWindow[ix * WINDOW_HEIGHT + iy]) {
-                  MPE_Draw_point(graph, ix, iy, MPE_BLACK);
-               } else {
-                  MPE_Draw_point(graph, ix, iy, MPE_PINK);
-               }
+            if (status.MPI_TAG == 0)
+            {
+               break;
             }
          }
-
-         totalTime = MPI_Wtime() - startTime;
-
-         printf("%f", totalTime);
-
-         printf("\nClick in the window to continue...\n");
-         MPE_Get_mouse_press( graph, &ix, &iy, &button );
-         MPE_Close_graphics( &graph );
       }
 
       free(myRow);
-      free(finalWindow);
    }
-
 
    MPI_Finalize();
    return 0;
 }
-
-
