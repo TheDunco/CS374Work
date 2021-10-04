@@ -56,6 +56,8 @@ int main(int argc, char* argv[])
    // instead of struct make matrix of bools
    bool * myWindow;
    bool * finalWindow;
+   int * recieveCount;
+   int * displacement;
 
    // bool **myWindowMatrix;
    // bool **finalWindowMatrix;
@@ -68,7 +70,9 @@ int main(int argc, char* argv[])
             numProcesses = 0,
             chunkSize    = 0,
             startPos     = 0,
-            endPos       = 0;
+            endPos       = 0,
+            remainder    = 0,
+            mySize       = 0;
    double     x            = 0.0,
             y            = 0.0,
             c_real       = 0.0,
@@ -85,11 +89,26 @@ int main(int argc, char* argv[])
 
    // calculate the size of the chunks we are using
    chunkSize = WINDOW_WIDTH / numProcesses;
-   remainder = WINDOW_WIDTH % numProcesses;
+
+                              // this gives how many to divide evenly into
+   remainder = WINDOW_WIDTH - (chunkSize * numProcesses);
    
-   // calculate where we will start and where we wil lend
-   startPos = id * chunkSize;
-   endPos = (1 + id) * chunkSize;
+   // calculate where we will start and where we will end
+   if (id < remainder) {
+      startPos = id * (chunkSize + 1);
+      endPos = (1 + id) * (chunkSize + 1);
+      myWindow = (bool *) malloc (sizeof(bool*) * (chunkSize + 1) * WINDOW_HEIGHT);
+      mySize = (chunkSize + 1) * WINDOW_HEIGHT;
+   }
+   else {
+      // we are now offset by remainder
+      startPos = (id * chunkSize) + remainder;
+      endPos = ((1 + id) * chunkSize) + remainder;
+      myWindow = (bool *) malloc (sizeof(bool*) * chunkSize * WINDOW_HEIGHT);
+      mySize = (chunkSize) * WINDOW_HEIGHT;
+   }
+
+   
 /*
     // Uncomment this block for interactive use
     printf("\nEnter spacing (.005): "); fflush(stdout);
@@ -100,8 +119,22 @@ int main(int argc, char* argv[])
             spacing, x_center, y_center);
 */
 
-   // allocate memory for the myWindow (size chunkSize * WINDOW_HEIGHT) and finalWindow
-   myWindow = (bool *) malloc (sizeof(bool*) * chunkSize * WINDOW_HEIGHT);
+   recieveCount = (int *) malloc (sizeof(int) * numProcesses);
+   displacement = (int *) malloc (sizeof(int) * numProcesses);
+
+   for (int i = 0; i < numProcesses; i++) {
+      // calculate one extra for each process that needs to
+      if (i < remainder) {
+         recieveCount[i] = (chunkSize + 1) * WINDOW_HEIGHT;
+         displacement[i] = i * (chunkSize + 1) * WINDOW_HEIGHT;
+      }
+      else {
+         // no remainder
+         recieveCount[i] = chunkSize * WINDOW_HEIGHT; // don't have to deal with remainder
+         displacement[i] = (i * (chunkSize) + remainder) * WINDOW_HEIGHT;
+      }
+   }
+
    finalWindow = (bool *) malloc (sizeof(bool*) * WINDOW_SIZE);
 
    if (id == MASTER) {
@@ -135,7 +168,7 @@ int main(int argc, char* argv[])
       xCount++;
    }
 
-   MPI_Gather(myWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, finalWindow, chunkSize * WINDOW_HEIGHT, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+   MPI_Gatherv(myWindow, mySize, MPI_C_BOOL, finalWindow, recieveCount, displacement, MPI_C_BOOL, 0, MPI_COMM_WORLD);
 
    if (id == MASTER) {
    // only deal with grpahics if we are id 0
