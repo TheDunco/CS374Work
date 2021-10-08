@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- <!DOCTYPE IntelParallelAdvisorSummaryCollection SYSTEM  "IntelParallelAdvisorSummaryCollection.dtd"> -->
+
+<IntelParallelAdvisorSummary version="" 
+                             kind="DATAKIND_SURVEY_EX" >
+  <hotspot filename="/home/djv78/Documents/GitHub/CS374Work/lab5/integral.c"
+           line_no="28"
+           routine="integrateTrap"
+           is_vectorized="0"
+           self_time="3.131846E+00"
+           total_time="0.000000E+00"
+           trip_counts=""
+           func_instance="3"
+           priority="0">
+           <recommendation id="rec_libsvml_gcc_c" title="Use the Intel short vector math library for vector intrinsics" confidence="3" gain="-1"/>
+  </hotspot>
+  <hotspot filename="/home/djv78/Documents/GitHub/CS374Work/lab5/integral.c"
+           line_no="28"
+           routine="integrateTrap"
+           is_vectorized="0"
+           self_time="3.131846E+00"
+           total_time="0.000000E+00"
+           trip_counts=""
+           func_instance="3"
+           priority="0">
+           <recommendation id="rec_libmvec_new_glibc_c" title="Use a Glibc library with vectorized SVML functions" confidence="1" gain="-1"/>
+  </hotspot>
+</IntelParallelAdvisorSummary >
