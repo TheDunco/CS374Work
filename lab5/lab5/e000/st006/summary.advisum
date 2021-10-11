@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- <!DOCTYPE IntelParallelAdvisorSummaryCollection SYSTEM  "IntelParallelAdvisorSummaryCollection.dtd"> -->
+
+<IntelParallelAdvisorSummary version="0.1" 
+                             kind="DATAKIND_SUITABILITY" 
+                             duration_total="8.626082E-03"
+                             num_processors="8" 
+                             num_mic_threads="128" 
+                             threading_paradigm="tbb" 
+                             target_system="cpu" 
+                             program_max_gain="1.029286E+00" >
+  <site filename="/home/djv78/Documents/GitHub/CS374Work/lab5/integral.c" 
+        line_no="31" 
+        label="&quote;integrateTrap&quote;">
+    <suitability duration_total="5.536458E-04" 
+                 num_instances="1">
+      <estimated_speedup>
+       <scaling threading_paradigm="tbb" 
+                site_overhead="false" 
+                task_overhead="false" 
+                task_chunking="false" 
+                lock_overhead="false" 
+                lock_contention="false" >
+          <scale cpu="8" speedup="3.162102E-04" />
+        </scaling>
+      </estimated_speedup>
+    </suitability>
+  </site>
+  <task filename="/home/djv78/Documents/GitHub/CS374Work/lab5/integral.c" 
+        line_no="33" 
+        label="&quote;result&quote;" 
+        duration_total="5.330588E-04" 
+        num_instances="999" />
+</IntelParallelAdvisorSummary >

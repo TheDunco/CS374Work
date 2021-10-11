@@ -2,9 +2,16 @@
  *  definite integrals using the trapezoidal rule. 
  *
  * Joel Adams, Fall 2013.
+ * 
+ * Parallelized using sclices by Duncan Van Keulen at Calvin University for 
+ * High Performance Computing Homework 5
+ * 11 October 2021
  */
 
 #include "integral.h"
+#include "advisor-annotate.h"
+
+
 
 /* declaration of the function to be integrated,
  * which must be defined in the caller of integrate()
@@ -19,16 +26,22 @@ extern double f(double x);
  * return: the approximate integral of f(x) from x1 to x2.
  */
 long double integrateTrap(double xLo, double xHi,
-                           unsigned long long numTrapezoids) {
-   long double delta = (xHi - xLo) / numTrapezoids;
+                          unsigned long long numTrapezoids,
+                          int id, int numProcs, long double delta) {
    long double result = 0;
    unsigned long long i = 0;
 
-   result = (f(xLo) + f(xHi)) * 0.5;
-   for (i = 1; i < numTrapezoids; i++) {
+   if (id == 0) {
+    result = (f(xLo) + f(xHi)) * 0.5;
+   }
+   
+  //  ANNOTATE_SITE_BEGIN("integrateTrap");
+   for (i = id + 1; i < numTrapezoids; i += numProcs) {
+    //  ANNOTATE_ITERATION_TASK("result")
      result += f(xLo + i*delta);
    }
-   result *= delta;
+   
+  //  ANNOTATE_SITE_END("integrateTrap")
 
    return result;
 } 

@@ -1,7 +1,7 @@
 TARGET = calcPI
 CC = mpicc
-CFLAGS = -Wall -c -ansi -pedantic -std=c99 -g
-LFLAGS = -o $(TARGET) -lm -g
+CFLAGS = -Wall -c  -std=c99 -g -I/opt/intel/advisor/include
+LFLAGS = -o $(TARGET) -lm -g -ldl
 
 $(TARGET): $(TARGET).o integral.o
 	$(CC) $(TARGET).o integral.o $(LFLAGS)

@@ -4,6 +4,11 @@
  *    (i.e., its integral from 0.0 to 1.0)
  *
  * Joel Adams, Fall 2013 for CS 374 at Calvin College.
+ * 
+ * Parallelized using sclices by Duncan Van Keulen at Calvin University for 
+ * High Performance Computing Homework 5
+ * 11 October 2021
+ * 
  */
 
 #include "integral.h"   // integrate()
@@ -11,6 +16,7 @@
 #include <stdlib.h>     // exit()
 #include <math.h>       // sqrt() 
 #include <mpi.h>
+
 
 
 /* function for unit circle (x^2 + y^2 = 1)
@@ -41,18 +47,32 @@ unsigned long long processCommandLine(int argc, char** argv) {
 
 int main(int argc, char** argv) {
    double startTime, endTime;
+   int id, numProcs;
+   long double finalPI = 0;
    long double approximatePI = 0;
+   long double delta;
    const long double REFERENCE_PI = 3.141592653589793238462643383279L;
    unsigned long long numTrapezoids = processCommandLine(argc, argv); 
    MPI_Init(&argc, &argv);
+   MPI_Comm_rank(MPI_COMM_WORLD, &id);
+   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
    startTime = MPI_Wtime();
 
-   approximatePI = integrateTrap(0.0, 1.0, numTrapezoids) * 4.0;
+   // delta now calc'd here for MPI reduce
+   delta = 1.0 / numTrapezoids;
    
-   endTime = MPI_Wtime() - startTime;
+   approximatePI = integrateTrap(0.0, 1.0, numTrapezoids, id, numProcs, delta);
+   
+   MPI_Reduce(&approximatePI, &finalPI, 1, MPI_LONG_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+   
+   if (id == 0) {
+      // we factor the delta out of the operation and passed it in as a variable instead
+      finalPI *= (4.0 * delta);
+      endTime = MPI_Wtime() - startTime;
 
-   printf("Using %llu trapezoids, the approximate vs actual values of PI are:\n%.30Lf\n%.30Lf\nProgram took %f seconds to run\n",
-           numTrapezoids, approximatePI, REFERENCE_PI, endTime);
+      printf("Using %llu trapezoids, the approximate vs actual values of PI are:\n%.30Lf\n%.30Lf\nProgram took %f seconds to run\n",
+            numTrapezoids, finalPI, REFERENCE_PI, endTime);
+   }
            
    MPI_Finalize();
 

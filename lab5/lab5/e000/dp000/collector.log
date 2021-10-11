@@ -1,0 +1,30 @@
+Analysis started...
+Collection has been started.
+Result file: /home/djv78/Documents/GitHub/CS374Work/lab5/lab5/e000/dp000/dp000.advixe 
+Found target process /home/djv78/Documents/GitHub/CS374Work/lab5/calcPI (PID = 25249). Analysis started... 
+Loaded module: /home/djv78/Documents/GitHub/CS374Work/lab5/calcPI. 
+Loaded module: /lib64/ld-linux-x86-64.so.2. 
+Loaded module: [vdso]. 
+Loaded module: /lib/x86_64-linux-gnu/libm.so.6. 
+Loaded module: /lib/x86_64-linux-gnu/libdl.so.2. 
+Loaded module: /lib/x86_64-linux-gnu/libmpich.so.12. 
+Loaded module: /lib/x86_64-linux-gnu/libc.so.6. 
+Loaded module: /lib/x86_64-linux-gnu/libpthread.so.0. 
+Loaded module: /lib/x86_64-linux-gnu/librt.so.1. 
+Loaded module: /lib/x86_64-linux-gnu/libgcc_s.so.1. 
+Loaded module: /opt/intel/advisor_2020.3.0.607294/lib64/runtime/libittnotify.so. 
+Unloaded module: /home/djv78/Documents/GitHub/CS374Work/lab5/calcPI. 
+Unloaded module: /lib64/ld-linux-x86-64.so.2. 
+Unloaded module: [vdso]. 
+Unloaded module: /lib/x86_64-linux-gnu/libm.so.6. 
+Unloaded module: /lib/x86_64-linux-gnu/libdl.so.2. 
+Unloaded module: /lib/x86_64-linux-gnu/libmpich.so.12. 
+Unloaded module: /lib/x86_64-linux-gnu/libc.so.6. 
+Unloaded module: /lib/x86_64-linux-gnu/libpthread.so.0. 
+Unloaded module: /lib/x86_64-linux-gnu/librt.so.1. 
+Unloaded module: /lib/x86_64-linux-gnu/libgcc_s.so.1. 
+Unloaded module: /opt/intel/advisor_2020.3.0.607294/lib64/runtime/libittnotify.so. 
+Process /home/djv78/Documents/GitHub/CS374Work/lab5/calcPI (PID = 25249) has terminated. 
+Application exit code: 0 
+Result file: /home/djv78/Documents/GitHub/CS374Work/lab5/lab5/e000/dp000/dp000.advixe 
+Analysis completed

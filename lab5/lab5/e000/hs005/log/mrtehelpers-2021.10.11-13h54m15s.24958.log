@@ -1,0 +1,7 @@
+94 [139846059333376] INFO mrtehelpers.mrteenv <> - Product libs directory: /opt/intel/advisor_2020.3.0.607294/lib64
+94 [139846059333376] INFO mrtehelpers.mrteenv <> - File mask: advixe_tpssmrte_clrprof*
+102 [139846059333376] INFO mrtehelpers.mrteenv <> - File name: lib
+102 [139846059333376] INFO mrtehelpers.mrteenv <> - File mask: advixe_tpssmrte_clrprof*
+108 [139846059333376] INFO mrtehelpers.mrteenv <> - File name: lib
+109 [139846059333376] ERROR mrtehelpers.mrteenv <> - Failed to init shared librarylib located at /opt/intel/advisor_2020.3.0.607294/lib64, at file: vcs/mrtehelpers3/src/mrteenv/mrte_profiling_initializer.cpp:485
+110 [139846059333376] ERROR mrtehelpers.mrteenv <> - CLR support is disabled because profiler GUID is empty, at file: vcs/mrtehelpers3/src/mrteenv/mrte_profiling_initializer.cpp:308

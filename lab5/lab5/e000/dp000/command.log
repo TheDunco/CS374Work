@@ -1,0 +1,1 @@
+/opt/intel/advisor_2020.3.0.607294/bin64/advixe-cl -collect dependencies -loop-call-count-limit=0 -instance-of-interest=0 -track-stack-variables -no-filter-by-scope -no-filter-reductions -project-dir /home/djv78/Documents/GitHub/CS374Work/lab5/lab5 --search-dir src:p=/home/djv78/Documents/GitHub/CS374Work/lab5 -- /home/djv78/Documents/GitHub/CS374Work/lab5/calcPI 1000

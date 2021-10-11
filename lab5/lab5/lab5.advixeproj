@@ -156,7 +156,12 @@
      <debug type="pointer" type_id="dasID_cctrl2::ApplicationWorkload" ptr_type="dasID_cctrl2::IWorkload">
       <workload>
        <targetName type="string">debug</targetName>
+       <launch.userapppath type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/calcPI</launch.userapppath>
+       <launch.userappworkdir type="string"></launch.userappworkdir>
+       <launch_app.app_to_launch type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/calcPI</launch_app.app_to_launch>
+       <launch_app.app_parameters type="string">1000000000</launch_app.app_parameters>
        <use_app_dir_as_work_dir type="bool">true</use_app_dir_as_work_dir>
+       <launch_app.working_folder type="string">/home/djv78/Documents/GitHub/CS374Work/lab5</launch_app.working_folder>
        <result_directory.path type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/lab5/r@@@{at}</result_directory.path>
        <search_directories type="bag"/>
        <context>
@@ -218,7 +223,12 @@
      <map type="pointer" type_id="dasID_cctrl2::ApplicationWorkload" ptr_type="dasID_cctrl2::IWorkload">
       <workload>
        <targetName type="string">map</targetName>
+       <launch.userapppath type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/calcPI</launch.userapppath>
+       <launch.userappworkdir type="string"></launch.userappworkdir>
+       <launch_app.app_to_launch type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/calcPI</launch_app.app_to_launch>
+       <launch_app.app_parameters type="string">1000000000</launch_app.app_parameters>
        <use_app_dir_as_work_dir type="bool">true</use_app_dir_as_work_dir>
+       <launch_app.working_folder type="string">/home/djv78/Documents/GitHub/CS374Work/lab5</launch_app.working_folder>
        <result_directory.path type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/lab5/r@@@{at}</result_directory.path>
        <search_directories type="bag"/>
        <context>
@@ -292,11 +302,11 @@
        <launch_app.inherit_sys_environment type="bool">true</launch_app.inherit_sys_environment>
        <launch_app.mpi_run type="bool">false</launch_app.mpi_run>
        <result_directory.path type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/lab5/r@@@{at}</result_directory.path>
-       <launch.userappworkdir type="string"></launch.userappworkdir>
-       <launch_app.mpi_max_rank type="null"></launch_app.mpi_max_rank>
        <launch.userapppath type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/calcPI</launch.userapppath>
        <launch_app.app_to_launch type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/calcPI</launch_app.app_to_launch>
-       <launch_app.app_parameters type="string">1000000000</launch_app.app_parameters>
+       <launch.userappworkdir type="string">/home/djv78/Documents/GitHub/CS374Work/lab5</launch.userappworkdir>
+       <launch_app.mpi_max_rank type="null"></launch_app.mpi_max_rank>
+       <launch_app.app_parameters type="string">1000</launch_app.app_parameters>
        <launch_app.working_folder type="string">/home/djv78/Documents/GitHub/CS374Work/lab5</launch_app.working_folder>
        <search_directories type="bag"/>
        <context>
@@ -394,7 +404,12 @@
      <suitability type="pointer" type_id="dasID_cctrl2::ApplicationWorkload" ptr_type="dasID_cctrl2::IWorkload">
       <workload>
        <targetName type="string">suitability</targetName>
+       <launch.userapppath type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/calcPI</launch.userapppath>
+       <launch.userappworkdir type="string"></launch.userappworkdir>
+       <launch_app.app_to_launch type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/calcPI</launch_app.app_to_launch>
+       <launch_app.app_parameters type="string">1000000000</launch_app.app_parameters>
        <use_app_dir_as_work_dir type="bool">true</use_app_dir_as_work_dir>
+       <launch_app.working_folder type="string">/home/djv78/Documents/GitHub/CS374Work/lab5</launch_app.working_folder>
        <result_directory.path type="string">/home/djv78/Documents/GitHub/CS374Work/lab5/lab5/r@@@{at}</result_directory.path>
        <search_directories type="bag"/>
        <context>
