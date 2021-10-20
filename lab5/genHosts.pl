@@ -14,7 +14,7 @@
 # 
 # Edited by JACK WESTEL in 2021 for CS 374.
 # 
-# Assisted by Hyechan Jun and Duncan van Keulan. They're really smart.
+# Assisted by Hyechan Jun and Duncan Van Keulen. They're really smart.
 #
 # Hopefully this will save you guys some time :)
 
