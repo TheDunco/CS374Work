@@ -44,11 +44,11 @@ void * computePI(void * arg)
         localSum += 4.0 / (1.0 + x*x);
     }
 
-    localSum *= width; 
+    localSum *= width;
 
     // pthread_mutex_lock(&piLock);
     // pi += localSum;
-    // pthread_mutex_unlock(&piLock); 
+    // pthread_mutex_unlock(&piLock);
     pthreadReductionSum(localSum, &pi);
 
     return NULL;
@@ -63,7 +63,7 @@ void * computePI(void * arg)
  */
 void processCommandLine(int argc, char ** argv) {
    if ( argc == 3 ) {
-      intervals = strtoul(argv[1], 0, 10); 
+      intervals = strtoul(argv[1], 0, 10);
       numThreads = strtoul(argv[2], 0, 10); 
    } else if ( argc == 2 ) {
       intervals = strtoul(argv[1], 0, 10);
