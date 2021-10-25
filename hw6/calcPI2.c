@@ -51,9 +51,14 @@ void * computePI(void * arg)
     // once we have the local sum, put it into the communication array so the other threads can access it
     commArray[threadID] = localSum;
 
-    // reduce all of the values in the array using a barrier
-    pi = pthreadReductionSum(commArray, numThreads, threadID);
-    barrierCleanup();
+    if (numThreads > 1) {
+        // reduce all of the values in the array using a barrier
+        pi = pthreadReductionSum(commArray, numThreads, threadID);
+    } else {
+        pi = commArray[0];
+    }
+    
+    
 
     return NULL;
 } 
