@@ -21,6 +21,8 @@ volatile long double pi = 0.0;       // our approximation of PI
 pthread_mutex_t      piLock;         // how we synchronize writes to 'pi' 
 long double          intervals = 0;  // how finely we chop up the integration 
 unsigned long        numThreads = 0; // how many threads we use 
+long double *      commArray;      // the array to allow inter-thread communication
+
 
 /* compute PI using the parallel for loop pattern
  * Parameters: arg, a void* 
@@ -45,11 +47,13 @@ void * computePI(void * arg)
     }
 
     localSum *= width;
+    
+    // once we have the local sum, put it into the communication array so the other threads can access it
+    commArray[threadID] = localSum;
 
-    // pthread_mutex_lock(&piLock);
-    // pi += localSum;
-    // pthread_mutex_unlock(&piLock);
-    pthreadReductionSum(localSum, &pi);
+    // reduce all of the values in the array using a barrier
+    pi = pthreadReductionSum(commArray, numThreads, threadID);
+    barrierCleanup();
 
     return NULL;
 } 
@@ -92,6 +96,7 @@ int main(int argc, char **argv) {
     threads = malloc(numThreads*sizeof(pthread_t));
     threadID = malloc(numThreads*sizeof(unsigned long));
     pthread_mutex_init(&piLock, NULL);
+    commArray = malloc(numThreads*sizeof(long double));
 
     startTime = MPI_Wtime();
 
