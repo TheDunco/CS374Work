@@ -8,6 +8,7 @@
 
 pthread_mutex_t lock;
 
+long double * commArray;  // the array to allow inter-thread communication
 // TODO: Works but breaks with odd number of processes
 /* Reduces local sums in an array
 * @param: long double commArray[]: the array of values to reduce
@@ -15,19 +16,29 @@ pthread_mutex_t lock;
 * @param: unsigned long id: the id of the thread "currently" running this function call
 * @returns: a long double representing the reduction sum of the array
 * Note: This algorithm should perform in O(log(n)) as long as there are enough cores to run the threads
-* Note: This function does not work with just 1 process as it is not needed.
 */
-long double pthreadReductionSum( long double commArray[], unsigned long numThreads, unsigned long id) {
-    int myPartner = 0;
-	for (int i = 2; i <= numThreads; i *= 2 ) {
-		pthreadBarrier(numThreads);
-        // determine the value of your partner
-        myPartner = (int)id + (i / 2);
-        // add the value of your partner to your slot in the array
-		if (id % i == 0) {
-			commArray[id] += commArray[myPartner];
+void pthreadReductionSum(long double localSum, unsigned long numThreads, unsigned long id, volatile long double * pi) {
+	
+	if (id == 0) {
+		commArray = malloc(sizeof(long double) * numThreads);
+	}
+	pthreadBarrier(numThreads);
+	commArray[id] = localSum;
+	
+	// multiply by 2 for correct number of iterations
+	for (int i = 2; i < numThreads * 2; i *= 2) {
+		pthreadBarrier((numThreads * 2 ) / i);
+		
+		// this checks if we are the "last" member of this stage in the reduction
+		// otherwise we know our partner
+		if (id % i == 0 && (id + i/2 < numThreads)) {
+			commArray[id] += commArray[id + i/2];
 		}
+		else break;
 	}
     barrierCleanup();
-	return commArray[0];
+	if (id == 0) {
+		*pi = commArray[0];
+		free(commArray);
+	}
 }
