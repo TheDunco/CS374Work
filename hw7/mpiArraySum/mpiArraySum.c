@@ -36,7 +36,6 @@ int main(int argc, char * argv[])
     exit(1);
   }
   
-  
   startTime = omp_get_wtime();
   
   readArray(argv[1], &a, &howMany);
@@ -112,10 +111,11 @@ double sumArray(double * a, int numSent, int id, int numProcesses, double * aRcv
   MPI_Scatter(a, numSent, MPI_DOUBLE, aRcv, numSent, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   
   for (i = 0; i < numSent; ++i) {
-    result += a[i];
+    result += aRcv[i];
   }
   
-  MPI_Reduce(a, aRcv, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  // TODO: changing from a to &result is giving seg faults on processes
+  MPI_Reduce(&result, aRcv, numSent, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   return result;
 }
