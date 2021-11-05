@@ -8,7 +8,7 @@
  * Usage: ./calcPI2 [numIntervals] [numThreads]
  * 
  * Edited by Duncan Van Keulen for High Performance Computing Homework 6
- * At Calvin University, 22 October 2021
+ * At Calvin University, 22 October 2021 to use the pthreadReductionSum pattern
  */
 
 #include <stdio.h>                 // printf(), fprintf(), etc.
