@@ -90,6 +90,7 @@ double sumArray(double * a, int numValues) {
   int i;
   double result = 0.0;
 
+  #pragma omp parallel for reduction(+:result)
   for (i = 0; i < numValues; ++i) {
     result += a[i];
   }
