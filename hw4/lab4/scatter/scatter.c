@@ -17,9 +17,9 @@ int main(int argc, char** argv) {
         MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
         MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
      
-        numSent = MAX / numProcs;
+	numSent = MAX / numProcs;
 	aRcv = (int*) malloc( numSent * sizeof(int) );
-        MPI_Scatter(aSend, numSent, MPI_INT, aRcv, numSent, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Scatter(aSend, numSent, MPI_INT, aRcv, numSent, MPI_INT, 0, MPI_COMM_WORLD);
 	printf("Process %d: ", myRank);
 	for (i = 0; i < numSent; i++) {
 		printf(" %d", aRcv[i]);

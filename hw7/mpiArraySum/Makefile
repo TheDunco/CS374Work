@@ -1,5 +1,5 @@
 OBJ = mpiArraySum
-CC = gcc
+CC = mpicc
 CFLAGS = -Wall -ansi -pedantic -std=c99
 LFLAGS = -o $(OBJ) -fopenmp
 

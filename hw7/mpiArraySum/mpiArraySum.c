@@ -11,32 +11,51 @@
 #include <stdio.h>      /* I/O stuff */
 #include <stdlib.h>     /* calloc, etc. */
 #include <omp.h>
+#include <mpi.h>
+
+#define MASTER 0
 
 void readArray(char * fileName, double ** a, int * n);
-double sumArray(double * a, int numValues) ;
+double sumArray(double * a, int numSent, int id, int numProcesses, double * aRcv);
 
 int main(int argc, char * argv[])
 {
   int  howMany;
   double sum;
   double * a;
+  double * aRcv;
   double startTime, endTime = 0;
+  int id, numProcesses, numSent = 0;
+  
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &id);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
 
-  if (argc != 2) {
+  if (argc != 2 && id == MASTER) {
     fprintf(stderr, "\n*** Usage: arraySum <inputFile>\n\n");
     exit(1);
   }
   
-  readArray(argv[1], &a, &howMany);
   
   startTime = omp_get_wtime();
-  sum = sumArray(a, howMany);
+  
+  readArray(argv[1], &a, &howMany);
+  // calculate how many array entries we are going to send to each process
+  numSent = howMany / numProcesses;
+	aRcv = (double*) malloc( numSent * sizeof(double) );
+    
+  sum = sumArray(a, numSent, id, numProcesses, aRcv);
+  
   endTime = omp_get_wtime() - startTime;
   
-  printf("The sum of the values in the input file '%s' is %g\nCalculation took %f seconds to compute\n",
-           argv[1], sum, endTime);
+  if (id == MASTER) {
+    printf("The sum of the values in the input file '%s' is %g\nCalculation took %f seconds to compute\n",
+            argv[1], sum, endTime);
+  }
 
   free(a);
+  free(aRcv);
+  MPI_Finalize();
 
   return 0;
 }
@@ -86,13 +105,17 @@ void readArray(char * fileName, double ** a, int * n) {
  * Return: the sum of the values in the array.
  */
 
-double sumArray(double * a, int numValues) {
+double sumArray(double * a, int numSent, int id, int numProcesses, double * aRcv) {
   int i;
   double result = 0.0;
 
-  for (i = 0; i < numValues; ++i) {
+  MPI_Scatter(a, numSent, MPI_DOUBLE, aRcv, numSent, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  
+  for (i = 0; i < numSent; ++i) {
     result += a[i];
   }
+  
+  MPI_Reduce(a, aRcv, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   return result;
 }
