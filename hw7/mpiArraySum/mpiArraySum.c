@@ -15,7 +15,7 @@
 #define MASTER 0
 
 void readArray(char * fileName, double ** a, int * n);
-double sumArray(double * a, int numSent, int id, int numProcesses, double * scatterTime);
+double sumArray(double * a, int numSent, int id, int numProcesses, double * sumTime, double * scatterTime);
 
 int main(int argc, char * argv[])
 {
@@ -23,7 +23,7 @@ int main(int argc, char * argv[])
   double sum;
   double * a;
   double totalStartTime, totalEndTime = 0;
-  double ioTime, scatterTime, sumTime = 0;
+  double ioTime, scatterTime, sumTime, remainderSumTime = 0;
   int id, numProcesses, numSent = 0;
   
   
@@ -50,22 +50,26 @@ int main(int argc, char * argv[])
   numSent = howMany / numProcesses;
   remainder = howMany % numProcesses;
   
-  sumTime = MPI_Wtime();
-  sum = sumArray(a, numSent, id, numProcesses, &scatterTime);
+  sum = sumArray(a, numSent, id, numProcesses, &sumTime, &scatterTime);
   
   if (id == MASTER) {
+    
+    remainderSumTime = MPI_Wtime();
     // sum the remainder
     for (int i = howMany - remainder; i < howMany; i++) {
       sum += a[i];
     }
+    remainderSumTime = MPI_Wtime() - remainderSumTime;
+    
+    sumTime += remainderSumTime;
   }
-  sumTime = MPI_Wtime() - sumTime;
   
   totalEndTime = MPI_Wtime() - totalStartTime;
   
   if (id == MASTER) {
-    printf("The sum of the values in the input file '%s' is %g\nTotal time: %f seconds\nIO time: %f seconds \nScatter time: %f seconds\nSum time: %f seconds\n",
-            argv[1], sum, totalEndTime, ioTime, scatterTime, sumTime);
+    double roughTotal = ioTime + scatterTime + sumTime;
+    printf("The sum of the values in the input file '%s' is %g\nTotal time: %f (rough: %f) seconds\nIO time: %f seconds \nScatter time: %f seconds\nSum time: %f seconds\n",
+            argv[1], sum, totalEndTime, roughTotal, ioTime, scatterTime, sumTime);
     free(a);
   }
 
@@ -119,20 +123,28 @@ void readArray(char * fileName, double ** a, int * n) {
  * Return: the sum of the values in the array.
  */
 
-double sumArray(double * a, int numSent, int id, int numProcesses, double * scatterTime) {
+double sumArray(double * a, int numSent, int id, int numProcesses, double * sumTime, double * scatterTime) {
   int i;
   double result, localResult = 0.0;
 	double * aRcv;
   aRcv = (double*) malloc( numSent * sizeof(double) );
 
-  *scatterTime = MPI_Wtime();
+  if (id == MASTER) {
+    *scatterTime = MPI_Wtime();
+  }
   
   MPI_Scatter(a, numSent, MPI_DOUBLE, aRcv, numSent, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   
-  *scatterTime = MPI_Wtime() - *scatterTime;
+  if (id == MASTER) {
+    *scatterTime = MPI_Wtime() - *scatterTime;
+    *sumTime = MPI_Wtime();
+  }
   
   for (i = 0; i < numSent; ++i) {
     localResult += aRcv[i];
+  }
+  if (id == MASTER) {
+    *sumTime = MPI_Wtime() - *sumTime;
   }
   
   MPI_Reduce(&localResult, &result, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
