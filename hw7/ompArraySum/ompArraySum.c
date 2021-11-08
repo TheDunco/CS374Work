@@ -20,21 +20,27 @@ int main(int argc, char * argv[])
   int  howMany;
   double sum;
   double * a;
-  double startTime, endTime = 0;
+  double totalTime, ioTime, sumTime = 0;
 
   if (argc != 2) {
     fprintf(stderr, "\n*** Usage: arraySum <inputFile>\n\n");
     exit(1);
   }
   
+  totalTime = omp_get_wtime();
+  
+  ioTime = omp_get_wtime();
   readArray(argv[1], &a, &howMany);
+  ioTime = omp_get_wtime() - ioTime;
   
-  startTime = omp_get_wtime();
+  sumTime = omp_get_wtime();
   sum = sumArray(a, howMany);
-  endTime = omp_get_wtime() - startTime;
+  sumTime = omp_get_wtime() - sumTime;
   
-  printf("The sum of the values in the input file '%s' is %g\nCalculation took %f seconds to compute\n",
-           argv[1], sum, endTime);
+  totalTime = omp_get_wtime() - totalTime;
+  
+  printf("The sum of the values in the input file '%s' is %g\nSum time: %f\nIO Time: %f\nTotal time: %f\n",
+           argv[1], sum, sumTime, ioTime, totalTime);
 
   free(a);
 
