@@ -10,13 +10,12 @@
 
 #include <stdio.h>      /* I/O stuff */
 #include <stdlib.h>     /* calloc, etc. */
-#include <omp.h>
 #include <mpi.h>
 
 #define MASTER 0
 
 void readArray(char * fileName, double ** a, int * n);
-double sumArray(double * a, int numSent, int id, int numProcesses, double * aRcv);
+double sumArray(double * a, int numSent, int id, int numProcesses, double * aRcv, double * scatterTime);
 
 int main(int argc, char * argv[])
 {
@@ -24,32 +23,40 @@ int main(int argc, char * argv[])
   double sum;
   double * a;
   double * aRcv;
-  double startTime, endTime = 0;
+  double totalStartTime, totalEndTime = 0;
+  double ioTime = 0;
+  double scatterTime, sumTime = 0;
   int id, numProcesses, numSent = 0;
+  
   
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &id);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+  
+  totalStartTime = MPI_Wtime();
 
   if (argc != 2 && id == MASTER) {
     fprintf(stderr, "\n*** Usage: arraySum <inputFile>\n\n");
     exit(1);
   }
   
-  startTime = omp_get_wtime();
-  
+  ioTime = MPI_Wtime();
   readArray(argv[1], &a, &howMany);
+  ioTime = MPI_Wtime() - ioTime;
+  
   // calculate how many array entries we are going to send to each process
   numSent = howMany / numProcesses;
 	aRcv = (double*) malloc( numSent * sizeof(double) );
-    
-  sum = sumArray(a, numSent, id, numProcesses, aRcv);
   
-  endTime = omp_get_wtime() - startTime;
+  sumTime = MPI_Wtime();
+  sum = sumArray(a, numSent, id, numProcesses, aRcv, &scatterTime);
+  sumTime = MPI_Wtime() - sumTime;
+  
+  totalEndTime = MPI_Wtime() - totalStartTime;
   
   if (id == MASTER) {
-    printf("The sum of the values in the input file '%s' is %g\nCalculation took %f seconds to compute\n",
-            argv[1], sum, endTime);
+    printf("The sum of the values in the input file '%s' is %g\nTotal time: %f seconds\nIO time: %f seconds \nScatter time: %f seconds\nSum time: %f seconds\n",
+            argv[1], sum, totalEndTime, ioTime, scatterTime, sumTime);
   }
 
   free(a);
@@ -104,18 +111,22 @@ void readArray(char * fileName, double ** a, int * n) {
  * Return: the sum of the values in the array.
  */
 
-double sumArray(double * a, int numSent, int id, int numProcesses, double * aRcv) {
+double sumArray(double * a, int numSent, int id, int numProcesses, double * aRcv, double * scatterTime) {
   int i;
-  double result = 0.0;
+  double result, localResult = 0.0;
 
+  *scatterTime = MPI_Wtime();
+  
   MPI_Scatter(a, numSent, MPI_DOUBLE, aRcv, numSent, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   
+  *scatterTime = MPI_Wtime() - *scatterTime;
+  
   for (i = 0; i < numSent; ++i) {
-    result += aRcv[i];
+    localResult += aRcv[i];
   }
   
   // TODO: changing from a to &result is giving seg faults on processes
-  MPI_Reduce(&result, aRcv, numSent, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&localResult, &result, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   return result;
 }
