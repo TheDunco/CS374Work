@@ -1,0 +1,287 @@
+Script started on 2021-11-10 10:06:09-05:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="185" LINES="39"]
+]0;djv78@maroon34: ~/Documents/GitHub/CS374Work/hw7[01;32mdjv78@maroon34[00m:[01;34m~/Documents/GitHub/CS374Work/hw7[00m$ cd mpiArraySum/
+[0m[01;32mgenHosts.pl[0m*  hosts  Makefile  [01;32mmpiArraySum[0m*  mpiArraySum.c
+]0;djv78@maroon34: ~/Documents/GitHub/CS374Work/hw7/mpiArraySum[01;32mdjv78@maroon34[00m:[01;34m~/Documents/GitHub/CS374Work/hw7/mpiArraySum[00m$ cat mpiArraySum.c
+/* arraySum.c uses an array to sum the values in an input file,
+ *  whose name is specified on the command-line.
+ * Joel Adams, Fall 2005
+ * for CS 374 (HPC) at Calvin College.
+ * 
+ * Modified for CS 374 (HPC) Homework 7 by Duncan Van Keulen
+ * 5 November 2021
+ * Added paralellization using MPI and timing.
+*/
+
+#include <stdio.h>      /* I/O stuff */
+#include <stdlib.h>     /* calloc, etc. */
+#include <mpi.h>
+
+#define MASTER 0
+
+void readArray(char * fileName, double ** a, int * n);
+double sumArray(double * a, int numSent, int id, int numProcesses, double * sumTime, double * scatterTime);
+
+int main(int argc, char * argv[])
+{
+  int  howMany, remainder;
+  double sum;
+  double * a;
+  double totalStartTime, totalEndTime = 0;
+  double ioTime, scatterTime, sumTime, remainderSumTime = 0;
+  int id, numProcesses, numSent = 0;
+  
+  
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &id);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+  
+  totalStartTime = MPI_Wtime();
+
+  if (argc != 2 && id == MASTER) {
+    fprintf(stderr, "\n*** Usage: arraySum <inputFile>\n\n");
+    exit(1);
+  }
+  
+  if (id == MASTER) {
+    ioTime = MPI_Wtime();
+    readArray(argv[1], &a, &howMany);
+    ioTime = MPI_Wtime() - ioTime;
+  }
+
+  MPI_Bcast(&howMany, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
+  // calculate how many array entries we are going to send to each process
+  numSent = howMany / numProcesses;
+  remainder = howMany % numProcesses;
+  
+  sum = sumArray(a, numSent, id, numProcesses, &sumTime, &scatterTime);
+  
+  if (id == MASTER) {
+    
+    remainderSumTime = MPI_Wtime();
+    // sum the remainder
+    for (int i = howMany - remainder; i < howMany; i++) {
+      sum += a[i];
+    }
+    remainderSumTime = MPI_Wtime() - remainderSumTime;
+    
+    sumTime += remainderSumTime;
+  }
+  
+  totalEndTime = MPI_Wtime() - totalStartTime;
+  
+  if (id == MASTER) {
+    double roughTotal = ioTime + scatterTime + sumTime;
+    printf("The sum of the values in the input file '%s' is %g\nTotal time: %f (rough: %f) seconds\nIO time: %f seconds \nScatter time: %f seconds\nSum time: %f seconds\n",
+            argv[1], sum, totalEndTime, roughTotal, ioTime, scatterTime, sumTime);
+    free(a);
+  }
+
+  MPI_Finalize();
+
+  return 0;
+}
+
+/* readArray fills an array with values from a file.
+ * Receive: fileName, a char*,
+ *          a, the address of a pointer to an array,
+ *          n, the address of an int.
+ * PRE: fileName contains N, followed by N double values.
+ * POST: a points to a dynamically allocated array
+ *        containing the N values from fileName
+ *        and n == N.
+ */
+
+void readArray(char * fileName, double ** a, int * n) {
+  int count, howMany;
+  double * tempA;
+  FILE * fin;
+
+  fin = fopen(fileName, "r");
+  if (fin == NULL) {
+    fprintf(stderr, "\n*** Unable to open input file '%s'\n\n",
+                     fileName);
+    exit(1);
+  }
+
+  fscanf(fin, "%d", &howMany);
+  tempA = calloc(howMany, sizeof(double));
+  if (tempA == NULL) {
+    fprintf(stderr, "\n*** Unable to allocate %d-length array",
+                     howMany);
+    exit(1);
+  }
+
+  for (count = 0; count < howMany; count++)
+   fscanf(fin, "%lf", &tempA[count]);
+
+  fclose(fin);
+
+  *n = howMany;
+  *a = tempA;
+}
+
+/* sumArray sums the values in an array of doubles.
+ * Receive: a, a pointer to the head of an array;
+ *          numValues, the number of values in the array.
+ * Return: the sum of the values in the array.
+ */
+
+double sumArray(double * a, int numSent, int id, int numProcesses, double * sumTime, double * scatterTime) {
+  int i;
+  double result, localResult = 0.0;
+	double * aRcv;
+  aRcv = (double*) malloc( numSent * sizeof(double) );
+
+  if (id == MASTER) {
+    *scatterTime = MPI_Wtime();
+  }
+  
+  MPI_Scatter(a, numSent, MPI_DOUBLE, aRcv, numSent, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  
+  if (id == MASTER) {
+    *scatterTime = MPI_Wtime() - *scatterTime;
+    *sumTime = MPI_Wtime();
+  }
+  
+  for (i = 0; i < numSent; ++i) {
+    localResult += aRcv[i];
+  }
+  if (id == MASTER) {
+    *sumTime = MPI_Wtime() - *sumTime;
+  }
+  
+  MPI_Reduce(&localResult, &result, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  
+  free(aRcv);
+
+  return result;
+}
+
+]0;djv78@maroon34: ~/Documents/GitHub/CS374Work/hw7/mpiArraySum[01;32mdjv78@maroon34[00m:[01;34m~/Documents/GitHub/CS374Work/hw7/mpiArraySum[00m$ make
+make: 'mpiArraySum' is up to date.
+]0;djv78@maroon34: ~/Documents/GitHub/CS374Work/hw7/mpiArraySum[01;32mdjv78@maroon34[00m:[01;34m~/Documents/GitHub/CS374Work/hw7/mpiArraySum[00m$ mpirun -np 8 -machinefile hosts ./mpiArraySum /home/cs/374/exercises/07/1m.txt
+The sum of the values in the input file '/home/cs/374/exercises/07/1m.txt' is 4.99829e+06
+Total time: 1.210933 seconds
+IO time: 0.299515 seconds 
+Scatter time: 0.059125 seconds
+Sum time: 0.907192 seconds
+]0;djv78@maroon34: ~/Documents/GitHub/CS374Work/hw7/mpiArraySum[01;32mdjv78@maroon34[00m:[01;34m~/Documents/GitHub/CS374Work/hw7/mpiArraySum[00m$ cd ../ompArraySum/
+Makefile  [0m[01;32mompArraySum[0m*  ompArraySum.c
+]0;djv78@maroon34: ~/Documents/GitHub/CS374Work/hw7/ompArraySum[01;32mdjv78@maroon34[00m:[01;34m~/Documents/GitHub/CS374Work/hw7/ompArraySum[00m$ cat ompArraySum.c
+/* arraySum.c uses an array to sum the values in an input file,
+ *  whose name is specified on the command-line.
+ * Joel Adams, Fall 2005
+ * for CS 374 (HPC) at Calvin College.
+ * 
+ * Modified for CS 374 (HPC) Homework 7 by Duncan Van Keulen
+ * 5 November 2021
+ * Added paralellization and timing.
+*/
+
+#include <stdio.h>      /* I/O stuff */
+#include <stdlib.h>     /* calloc, etc. */
+#include <omp.h>
+
+void readArray(char * fileName, double ** a, int * n);
+double sumArray(double * a, int numValues) ;
+
+int main(int argc, char * argv[])
+{
+  int  howMany;
+  double sum;
+  double * a;
+  double totalTime, ioTime, sumTime = 0;
+
+  if (argc != 2) {
+    fprintf(stderr, "\n*** Usage: arraySum <inputFile>\n\n");
+    exit(1);
+  }
+  
+  totalTime = omp_get_wtime();
+  
+  ioTime = omp_get_wtime();
+  readArray(argv[1], &a, &howMany);
+  ioTime = omp_get_wtime() - ioTime;
+  
+  sumTime = omp_get_wtime();
+  sum = sumArray(a, howMany);
+  sumTime = omp_get_wtime() - sumTime;
+  
+  totalTime = omp_get_wtime() - totalTime;
+  
+  printf("The sum of the values in the input file '%s' is %g\nSum time: %f\nIO Time: %f\nTotal time: %f\n",
+           argv[1], sum, sumTime, ioTime, totalTime);
+
+  free(a);
+
+  return 0;
+}
+
+/* readArray fills an array with values from a file.
+ * Receive: fileName, a char*,
+ *          a, the address of a pointer to an array,
+ *          n, the address of an int.
+ * PRE: fileName contains N, followed by N double values.
+ * POST: a points to a dynamically allocated array
+ *        containing the N values from fileName
+ *        and n == N.
+ */
+
+void readArray(char * fileName, double ** a, int * n) {
+  int count, howMany;
+  double * tempA;
+  FILE * fin;
+
+  fin = fopen(fileName, "r");
+  if (fin == NULL) {
+    fprintf(stderr, "\n*** Unable to open input file '%s'\n\n",
+                     fileName);
+    exit(1);
+  }
+
+  fscanf(fin, "%d", &howMany);
+  tempA = calloc(howMany, sizeof(double));
+  if (tempA == NULL) {
+    fprintf(stderr, "\n*** Unable to allocate %d-length array",
+                     howMany);
+    exit(1);
+  }
+
+  for (count = 0; count < howMany; count++)
+   fscanf(fin, "%lf", &tempA[count]);
+
+  fclose(fin);
+
+  *n = howMany;
+  *a = tempA;
+}
+
+/* sumArray sums the values in an array of doubles.
+ * Receive: a, a pointer to the head of an array;
+ *          numValues, the number of values in the array.
+ * Return: the sum of the values in the array.
+ */
+
+double sumArray(double * a, int numValues) {
+  int i;
+  double result = 0.0;
+
+  #pragma omp parallel for reduction(+:result)
+  for (i = 0; i < numValues; ++i) {
+    result += a[i];
+  }
+
+  return result;
+}
+
+]0;djv78@maroon34: ~/Documents/GitHub/CS374Work/hw7/ompArraySum[01;32mdjv78@maroon34[00m:[01;34m~/Documents/GitHub/CS374Work/hw7/ompArraySum[00m$ make
+make: 'ompArraySum' is up to date.
+]0;djv78@maroon34: ~/Documents/GitHub/CS374Work/hw7/ompArraySum[01;32mdjv78@maroon34[00m:[01;34m~/Documents/GitHub/CS374Work/hw7/ompArraySum[00m$ ./ompArraySum /home/cs/374/exercises/07/1m.txt
+The sum of the values in the input file '/home/cs/374/exercises/07/1m.txt' is 4.99829e+06
+Sum time: 0.000576
+IO Time: 0.219212
+Total time: 0.219789
+]0;djv78@maroon34: ~/Documents/GitHub/CS374Work/hw7/ompArraySum[01;32mdjv78@maroon34[00m:[01;34m~/Documents/GitHub/CS374Work/hw7/ompArraySum[00m$ exit
+
+Script done on 2021-11-10 10:07:16-05:00 [COMMAND_EXIT_CODE="0"]
