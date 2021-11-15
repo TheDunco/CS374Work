@@ -7,6 +7,9 @@
  *
  *   16-bit version by Michael J. Quinn, Sept 2002.
  *   Extended to 32 bits by Joel C. Adams, Sept 2013.
+ * 
+ *   Parallelized by Duncan Van Keulen with a hybrid MPI/OpenMP approach
+ *     at Calvin University for CS374 High Performance Computing 15 Nov 2021
  */
 
 #include <stdio.h>     // printf()
