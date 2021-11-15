@@ -35,15 +35,9 @@ int main (int argc, char *argv[]) {
 
    double startTime = 0.0, totalTime = 0.0;
    startTime = MPI_Wtime();
-
-   // new solution
-   // Use OMP to spread the loop between all the cores on the node
-   // for (i = 0; i <= UINT_MAX; i++) {
-   //    count += checkCircuit (id, i);
-   // }
    
-   // old solution
-   // slice the problem with threads
+   // new solution
+   // Use OMP to spread the loop between all the available cores on the node
    #pragma omp parallel reduction(+:count)
    for (i = id; i <= UINT_MAX; i+=numProcesses) {
       count += checkCircuit (id, i);
