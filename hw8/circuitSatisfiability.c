@@ -38,16 +38,16 @@ int main (int argc, char *argv[]) {
 
    // new solution
    // Use OMP to spread the loop between all the cores on the node
-   #pragma omp parallel reduction(+:count)
-   for (i = 0; i <= UINT_MAX; i++) {
-      count += checkCircuit (id, i);
-   }
-   
-   // old solution
-   // slice the problem
-   // for (i = id; i <= UINT_MAX; i+=numProcesses) {
+   // for (i = 0; i <= UINT_MAX; i++) {
    //    count += checkCircuit (id, i);
    // }
+   
+   // old solution
+   // slice the problem with threads
+   #pragma omp parallel reduction(+:count)
+   for (i = id; i <= UINT_MAX; i+=numProcesses) {
+      count += checkCircuit (id, i);
+   }
 
    MPI_Reduce(&count, &globalCount, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
