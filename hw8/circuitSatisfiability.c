@@ -38,7 +38,7 @@ int main (int argc, char *argv[]) {
    
    // new solution
    // Use OMP to spread the loop between all the available cores on the node
-   #pragma omp parallel reduction(+:count)
+   #pragma omp parallel for reduction(+:count)
    for (i = id; i <= UINT_MAX; i+=numProcesses) {
       count += checkCircuit (id, i);
    }
