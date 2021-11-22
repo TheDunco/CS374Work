@@ -31,13 +31,13 @@
  * The 3 vectors have the same number of elements numElements.
  */
 __global__
-void vectorAdd(const float *A, const float *B, float *C, unsigned long numElements)
+void vectorMult(const float *A, const float *B, float *C, unsigned long numElements)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (i < numElements)
     {
-        C[i] = A[i] + B[i];
+        C[i] = A[i] * B[i];
     }
 }
 
@@ -129,7 +129,7 @@ int main(int argc, char** argv)
     int threadsPerBlock = 256;
     int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
     printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
-    vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
+    vectorMult<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
     err = cudaGetLastError();
     checkErr(err, "Failed to launch vectorAdd kernel");
 
@@ -148,7 +148,7 @@ int main(int argc, char** argv)
     // Verify that the result vector is correct
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(h_A[i] + h_B[i] - h_C[i]) > 1e-5)
+        if (fabs(h_A[i] * h_B[i] - h_C[i]) > 1e-5)
         {
             fprintf(stderr, "Result verification failed at element %d!\n", i);
             exit(EXIT_FAILURE);
@@ -176,13 +176,13 @@ int main(int argc, char** argv)
     // repeat the computation sequentially
     for (int i = 0; i < numElements; ++i)
     {
-       h_C[i] = h_A[i] + h_B[i];
+       h_C[i] = h_A[i] * h_B[i];
     }
 
     // verify again
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(h_A[i] + h_B[i] - h_C[i]) > 1e-5)
+        if (fabs(h_A[i] * h_B[i] - h_C[i]) > 1e-5)
         {
             fprintf(stderr, "Result verification failed at element %d!\n", i);
             exit(EXIT_FAILURE);

@@ -38,7 +38,7 @@ void vectorSquare(const float *A, float *C, unsigned long numElements)
 
     if (i < numElements)
     {
-        C[i] = sqrt(A[i]);
+        C[i] = A[i] * A[i];
     }
 }
 
@@ -140,7 +140,7 @@ int main(int argc, char** argv)
     // Verify that the result vector is correct
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(sqrt(h_A[i])) <= 1e-5)
+        if (!(fabs(h_A[i] * h_A[i]) < INT_MAX))
         {
             fprintf(stderr, "Result verification %lf failed at element %d!\n", h_A[i], i);
             exit(EXIT_FAILURE);
@@ -171,7 +171,7 @@ int main(int argc, char** argv)
     // verify again
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(sqrt(h_A[i])) <= 1e-5)
+        if (!(fabs(h_A[i] * h_A[i]) < INT_MAX))
         {
             fprintf(stderr, "Result verification %lf failed at element %d!\n", h_A[i], i);
             exit(EXIT_FAILURE);

@@ -1,4 +1,4 @@
-TARGET = vectorHypot
+TARGET = vectorSquare
 CC     = g++
 CFLAGS = -Wall -ansi -pedantic -std=c99
 LFLAGS = -o $(TARGET) -lgomp
