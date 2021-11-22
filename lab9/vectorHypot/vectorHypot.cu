@@ -8,14 +8,10 @@
  * is strictly prohibited.
  *
  * Extended for use in CS 374 at Calvin College by Joel C. Adams.
- */
-
-/**
- * Vector addition: C = A + B.
- *
- * This sample is a very basic sample that implements element by element
- * vector addition. It is the same as the sample illustrating Chapter 2
- * of the programming guide with some additions like error checking.
+ * Modified by Duncan Van Keulen for Homework 9 for HPC at Calvin University
+ * 22 November 2021
+ * 
+ * Vector hypotenuse: C = sqrt(A * A + B * B)
  */
 
 #include <stdio.h>
@@ -31,13 +27,13 @@
  * The 3 vectors have the same number of elements numElements.
  */
 __global__
-void vectorAdd(const float *A, const float *B, float *C, unsigned long numElements)
+void vectorHypot(const float *A, const float *B, float *C, unsigned long numElements)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (i < numElements)
     {
-        C[i] = A[i] + B[i];
+        C[i] = sqrt(A[i]*A[i] + B[i]*B[i]);
     }
 }
 
@@ -129,7 +125,7 @@ int main(int argc, char** argv)
     int threadsPerBlock = 256;
     int blocksPerGrid =(numElements + threadsPerBlock - 1) / threadsPerBlock;
     printf("CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
-    vectorAdd<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
+    vectorHypot<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, numElements);
     err = cudaGetLastError();
     checkErr(err, "Failed to launch vectorAdd kernel");
 
@@ -148,9 +144,9 @@ int main(int argc, char** argv)
     // Verify that the result vector is correct
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(h_A[i] + h_B[i] - h_C[i]) > 1e-5)
+        if (fabs(h_C[i]) != fabs(sqrt(h_A[i]*h_A[i] + h_B[i]*h_B[i])))
         {
-            fprintf(stderr, "Result verification failed at element %d!\n", i);
+            fprintf(stderr, "Result verification failed at element %d. %lf!\n", i, h_C[i]);
             exit(EXIT_FAILURE);
         }
     }
@@ -182,7 +178,7 @@ int main(int argc, char** argv)
     // verify again
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(h_A[i] + h_B[i] - h_C[i]) > 1e-5)
+        if (fabs(h_C[i]) != fabs(sqrt(h_A[i]*h_A[i] + h_B[i]*h_B[i])))
         {
             fprintf(stderr, "Result verification failed at element %d!\n", i);
             exit(EXIT_FAILURE);
