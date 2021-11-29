@@ -144,7 +144,7 @@ int main(int argc, char** argv)
     // Verify that the result vector is correct
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(h_C[i]) != fabs(sqrt(h_A[i]*h_A[i] + h_B[i]*h_B[i])))
+        if (!sqrt(h_A[i]*h_A[i] + h_B[i]*h_B[i]) > 1e-5)
         {
             fprintf(stderr, "Result verification failed at element %d. %lf!\n", i, h_C[i]);
             exit(EXIT_FAILURE);
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
     // verify again
     for (int i = 0; i < numElements; ++i)
     {
-        if (fabs(h_C[i]) != fabs(sqrt(h_A[i]*h_A[i] + h_B[i]*h_B[i])))
+        if (!sqrt(h_A[i]*h_A[i] + h_B[i]*h_B[i]) > 1e-5)
         {
             fprintf(stderr, "Result verification failed at element %d!\n", i);
             exit(EXIT_FAILURE);
