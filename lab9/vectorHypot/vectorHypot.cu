@@ -9,7 +9,7 @@
  *
  * Extended for use in CS 374 at Calvin College by Joel C. Adams.
  * Modified by Duncan Van Keulen for Homework 9 for HPC at Calvin University
- * 22 November 2021
+ * 22-29 November 2021
  * 
  * Vector hypotenuse: C = sqrt(A * A + B * B)
  */
